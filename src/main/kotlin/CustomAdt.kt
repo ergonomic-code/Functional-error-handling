@@ -9,7 +9,13 @@ sealed interface ParseResult {
 object CustomAdt {
 
     fun parseInt(str: String): ParseResult {
-        TODO()
-    }
+        if (str.startsWith("--")) return ParseResult.Failure(1, '-')
 
+        try {
+            return ParseResult.Success(str.toInt())
+        } catch (_: NumberFormatException) {
+            val pos = str.indexOfFirst { ch -> !ch.isDigit() }
+            return ParseResult.Failure(pos, str[pos])
+        }
+    }
 }
