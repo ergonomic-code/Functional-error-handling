@@ -8,19 +8,20 @@ sealed interface ParseResult {
 
 object CustomAdt {
 
-    fun parseInt(str: String): ParseResult {
-        var res = 0
-        val sign = if (str.startsWith("-")) -1 else 1
-        val symbolsToSkip = if (sign == -1) 1 else 0
+    fun parseInt(input: String): ParseResult {
+        val (sign, elementsToSkip) = if (input.startsWith("-")) -1 to 1 else 1 to 0
 
-        for ((i, char) in str.withIndex().drop(symbolsToSkip)) {
-            if (char !in '0'..'9')
-                return ParseResult.Failure(i, char)
-
-            res = res * 10 + (char - '0')
-        }
-
-        return ParseResult.Success(res * sign)
+        return input.withIndex()
+            .drop(elementsToSkip)
+            .map { (index, char) ->
+                if (char in '0'..'9') {
+                    char - '0'
+                } else {
+                    return ParseResult.Failure(index, char)
+                }
+            }
+            .fold(0) { acc, digit -> acc * 10 + digit }
+            .let { result -> ParseResult.Success(result * sign) }
     }
 
 }
