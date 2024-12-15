@@ -1,35 +1,17 @@
 package pro.azhidkov.training.functional_errors
 
-import kotlin.math.pow
-
 sealed interface ParseResult {
     @JvmInline
     value class Success(val value: Int) : ParseResult
     data class Failure(val pos: Int, val char: Char) : ParseResult
 }
 
-sealed interface ValidationResult {
-    @JvmInline
-    value class Success(val value: String) : ValidationResult
-    data class Failure(val pos: Int, val char: Char) : ValidationResult
-}
-
-data class Digit(val decimalRadix: Int, val char: Char) {
-    val value: Int
-        get() = char - '0'
-}
-
-fun validateIntString(str: String): ValidationResult =
-    str
+fun String.firstNonDigitCharOrNull(): IndexedValue<Char>? =
+    this
         .asSequence()
-        .mapIndexedNotNull { index, char ->
-            when {
-                isCorrectIntStringChar(index, char, str.first()) -> null
-                else -> ValidationResult.Failure(index, char)
-            }
-        }
+        .withIndex()
+        .filterNot { isCorrectIntStringChar(it.index, it.value, this.first()) }
         .firstOrNull()
-        ?: ValidationResult.Success(str)
 
 fun isCorrectIntStringChar(pos: Int, char: Char, firstChar: Char): Boolean =
     when {
@@ -46,21 +28,22 @@ fun parseCorrectInt(str: String): Int =
         else -> parsePositiveInt(str)
     }
 
-fun parseNegativeInt(str: String): Int = -1 * parsePositiveInt(str.drop(1))
+fun parseNegativeInt(str: String): Int =
+    -1 * parsePositiveInt(str.drop(1))
 
-fun parsePositiveInt(str: String): Int = str
-    .mapIndexed { index, digit -> Digit((10.0.pow(str.length - index - 1)).toInt(), digit) }
-    .sumOf { it.value * it.decimalRadix }
+fun parsePositiveInt(str: String): Int =
+    str
+        .map { it - '0' }
+        .fold(0) { accumulator, digit -> accumulator * 10 + digit }
 
 object CustomAdt {
 
     fun parseInt(str: String): ParseResult {
         return when {
             str.isEmpty() -> ParseResult.Failure(-1, '\u0000')
-            else -> when (val validationResult = validateIntString(str)) {
-                is ValidationResult.Success -> ParseResult.Success(parseCorrectInt(validationResult.value))
-                is ValidationResult.Failure -> ParseResult.Failure(validationResult.pos, validationResult.char)
-            }
+            else -> str.firstNonDigitCharOrNull()
+                ?.let { ParseResult.Failure(it.index, it.value) }
+                ?: ParseResult.Success(parseCorrectInt(str))
         }
     }
 
