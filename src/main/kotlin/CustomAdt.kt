@@ -13,14 +13,17 @@ fun String.firstNonDigitCharOrNull(): IndexedValue<Char>? =
         .filterNot { isCorrectIntStringChar(it.index, it.value, this.first()) }
         .firstOrNull()
 
-fun isCorrectIntStringChar(pos: Int, char: Char, firstChar: Char): Boolean =
-    when {
+fun isCorrectIntStringChar(pos: Int, char: Char, firstChar: Char): Boolean {
+    val maxLengthOfPositiveIntString = Int.MAX_VALUE.toString().length
+    return when {
         pos == 0 && char == '-' -> true
         pos == 1 && char == '0' && firstChar == '-' -> false
         pos == 1 && char == '0' && firstChar == '0' -> false
-        (pos < 10 || (firstChar == '-' && pos == 10)) && char.isDigit() -> true
+        pos < maxLengthOfPositiveIntString && char.isDigit() -> true
+        pos == maxLengthOfPositiveIntString && char.isDigit() && firstChar == '-' -> true
         else -> false
     }
+}
 
 fun parseCorrectInt(str: String): Int =
     when (str.first()) {
